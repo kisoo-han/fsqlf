@@ -1,24 +1,26 @@
 #include <stdlib.h>  // malloc
 #include <assert.h>  // assert
-#include <lib_fsqlf.h> // struct fsqlf_kw_conf
+#include "kw.h" // struct kw_conf
 
 
-// Functions that retrieve single element of kw-map.
+// Global map variable. should not be accessed directly.
+struct kw_conf *g_keyword_config = NULL;
 
 
-void FSQLF_kw_create(fsqlf_kwmap_t *kwmap,  const char *name)
+struct kw_conf *kw_add(const char *name)
 {
-    struct fsqlf_kw_conf *tmp;
-    tmp = (struct fsqlf_kw_conf*) calloc(1, sizeof(struct fsqlf_kw_conf));
+    struct kw_conf *tmp;
+    tmp = (struct kw_conf*) malloc(sizeof(struct kw_conf));
     assert(tmp);
     tmp->name = name;
-    HASH_ADD_KEYPTR(hh, *kwmap, tmp->name, strlen(tmp->name), tmp);
+    HASH_ADD_KEYPTR(hh, g_keyword_config, tmp->name, strlen(tmp->name), tmp);
+    return tmp;
 }
 
 
-struct fsqlf_kw_conf *fsqlf_kw_get(fsqlf_kwmap_t kwmap, const char *name)
+struct kw_conf *kw(const char *name)
 {
-    struct fsqlf_kw_conf *match;
-    HASH_FIND_STR(kwmap, name, match);
+    struct kw_conf *match;
+    HASH_FIND_STR(g_keyword_config, name, match);
     return match;
 }
