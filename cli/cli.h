@@ -3,11 +3,11 @@
 
 
 #include <stdio.h> // fprintf, FILE
-#include "../lib_fsqlf/kw/kw.h"
+#include <lib_fsqlf.h>
 
 
-void read_cli_options(int argc, char **argv,
-    struct kw_conf * (*kw)(const char *), FILE ** fin, FILE ** fout);
+void read_cli_options(struct fsqlf_kw_conf *kwall, int argc, char **argv,
+    FILE **fin, FILE **fout);
 
 
 #endif

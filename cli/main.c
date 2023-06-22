@@ -1,21 +1,22 @@
-#include "../lib_fsqlf/conf_file/conf_file_read.h"   // read_default_conf_file
-#include "../lib_fsqlf/kw/kwall_init.h"  // init_all_settings
-#include "../lib_fsqlf/kw/kw.h"  // init_all_settings
+#include <lib_fsqlf.h>
 #include "cli.h"    // read_cli_options
-#include "../lib_fsqlf/formatter/lex.yy.h" // yyin, yyout
 
 
 int main(int argc, char **argv)
 {
     // Initialise with STD I/O (later can be changed by command line options).
-    yyin  = stdin;
-    yyout = stdout;
+    FILE *fin, *fout;
+    fin = stdin;
+    fout = stdout;
+    fsqlf_kwmap_t kwmap;
 
-    init_all_settings(&kw);             // Init default configs.
-    read_default_conf_file(&kw);        // Read configs from file.
-    read_cli_options(argc, argv, &kw, &yyin, &yyout);  // Read configs from command line.
+    fsqlf_kwmap_init(&kwmap);             // Init default configs.
+    fsqlf_kwmap_conffile_read_default(kwmap);        // Read configs from file.
+    read_cli_options(kwmap, argc, argv, &fin, &fout);  // Read configs from command line.
 
-    while (yylex() != 0) ;
+    fsqlf_format_file(kwmap, fin, fout);
+
+    fsqlf_kwmap_destroy(kwmap);
 
     return 0;
 }

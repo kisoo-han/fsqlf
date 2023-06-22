@@ -2,8 +2,7 @@
 #include <string.h>     // strcmp, strchr, strncat, strncpy, strlen
 #include <assert.h>     // assert
 #include <sys/stat.h>   // stat
-#include "conf_file_read.h"
-#include "conf_file_constants.h"
+#include <lib_fsqlf.h>
 #include "../../utils/string/read_int.h"
 
 
@@ -14,30 +13,29 @@ static int file_exists(const char *filename)
 }
 
 
-static void setting_value(const char *setting_name, const int *setting_values)
+static void set_from_array(struct fsqlf_kw_conf *kwall, const char *name, const int *values)
 {
-    struct kw_conf *k;
-    k = kw(setting_name);
+    struct fsqlf_kw_conf *k;
+    k = fsqlf_kw_get(kwall, name);
     if (k != NULL) {
-        k->before.new_line  = setting_values[0];
-        k->before.indent    = setting_values[1];
-        k->before.space     = setting_values[2];
-        k->after.new_line   = setting_values[3];
-        k->after.indent     = setting_values[4];
-        k->after.space      = setting_values[5];
+        k->before.global_indent_change  = values[0];
+        k->before.new_line  = values[1];
+        k->before.indent    = values[2];
+        k->before.space     = values[3];
+        k->after.global_indent_change   = values[4];
+        k->after.new_line   = values[5];
+        k->after.indent     = values[6];
+        k->after.space      = values[7];
     }
 }
 
 
-#define READ_SUCCESSFULL (0)
-#define READ_FAILED (1)
-// Read specified config file
-int read_conf_file(const char *file_pathname,
-                    struct kw_conf * (*kw)(const char *))
+// Read specified config file.
+enum fsqlf_status fsqlf_kwmap_conffile_read(struct fsqlf_kw_conf *kwall, const char *file)
 {
-    FILE *config_file = fopen(file_pathname, "r");
+    FILE *config_file = fopen(file, "r");
     if (!config_file) {
-        return READ_FAILED;
+        return FSQLF_FAIL;
     }
 
     char line[FSQLF_CONFFILE_LINELENGTH+1];
@@ -68,55 +66,63 @@ int read_conf_file(const char *file_pathname,
         // nl before, tab before, space before, nl after, tab after, space after
         char *pos = space_ptr + 1; // Skip \0 char.
         llen -= pos - line;
-        const int VALUE_COUNT = 6;
+        const int VALUE_COUNT = 8;
         int setting_values[VALUE_COUNT];
-        size_t cnt = read_int_array(pos, llen, VALUE_COUNT, setting_values);
+        size_t cnt = FSQLF_read_int_array(pos, llen, VALUE_COUNT, setting_values);
         if (cnt == 0) {
             continue;
         }
-        setting_value(setting_name, setting_values);
+        set_from_array(kwall, setting_name, setting_values);
     }
 
     fclose(config_file);
-    return READ_SUCCESSFULL;
+    return FSQLF_OK;
 }
 
 
-
-// Read configuration file from default conf file
-// This would be "formatting.conf" in working idrectory
-// If that does not exists, then on non-windows try "~/fslqf/formatting.conf"
-// TODO: rename to read_default_conf_files
-int read_default_conf_file(struct kw_conf * (*kw)(const char *))
+static char * get_path_to_user_folder_conf()
 {
-    // First try file in working directory
+    // Get path to conf file in user (home) directory.
+
+    // ..get all the ingredients.
+    #ifndef _WIN32
+    const char *home_dir = getenv("HOME");
+    #else
+    const char *home_dir = getenv("USERPROFILE");
+    #endif
+    if (home_dir == NULL) return NULL;
+    const char *fsqlf_sub = "/.fsqlf/";
+    const char *conf_file = FSQLF_CONFFILE_NAME;
+
+    // ..get complete path to conf file.
+    size_t full_len = strlen(home_dir) + strlen(fsqlf_sub)
+            + strlen(conf_file) + 1;
+    char * full_path = malloc(full_len);
+    if (full_path == NULL) return NULL;
+    strncpy(full_path, home_dir, full_len);
+    strncat(full_path, fsqlf_sub, full_len - strlen(full_path));
+    strncat(full_path, conf_file, full_len - strlen(full_path));
+    return full_path;
+}
+
+
+// Read configuration file from default conf file.
+// (working directory and "fsqlf/" under user dir)
+enum fsqlf_status fsqlf_kwmap_conffile_read_default(struct fsqlf_kw_conf *kwall)
+{
+    // First try file in working directory.
     if (file_exists(FSQLF_CONFFILE_NAME)) {
-        return read_conf_file(FSQLF_CONFFILE_NAME, kw);
+        return fsqlf_kwmap_conffile_read(kwall, FSQLF_CONFFILE_NAME);
     }
 
-    // In non-windows (unix/linux) also try folder in user-home directory
-    #ifndef _WIN32
-        // Get all the ingredients
-        const char *home_dir = getenv("HOME");
-        if (home_dir == NULL) return READ_FAILED; // TODO: Log it.
-        const char *fsqlf_sub = "/.fsqlf/";
-        const char *conf_file = FSQLF_CONFFILE_NAME;
+    char *full_path = get_path_to_user_folder_conf();
+    if (full_path == NULL) return FSQLF_FAIL;
 
-        // Mix the ingredients - get complete path till conf file.
-        size_t full_len = strlen(home_dir) + strlen(fsqlf_sub)
-                        + strlen(conf_file) + 1;
-        char * full_path = malloc(full_len);
-        if (full_path == NULL) return READ_FAILED; // TODO: Log it.
-        strncpy(full_path, home_dir, full_len);
-        strncat(full_path, fsqlf_sub, full_len - strlen(full_path));
-        strncat(full_path, conf_file, full_len - strlen(full_path));
+    // Read the file.
+    enum fsqlf_status ret_code = fsqlf_kwmap_conffile_read(kwall, full_path);
 
-        // Read the file
-        int ret_code = read_conf_file(full_path, kw);
+    // Cleanup.
+    free(full_path);
 
-        // Cleanup
-        free(full_path);
-
-        return ret_code;
-    #endif
+    return ret_code;
 }
