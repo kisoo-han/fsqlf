@@ -351,7 +351,7 @@ END (?i:end)
 {ELSE}  { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_else")); }
 {END}   { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_end")); }
 
-{COMMENT_ML} { TUSE_SIMPLE(NULL); }
+{COMMENT_ML} { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_comments")); }
 {COMMENT_ONE_LINE} { TUSE_SIMPLE(NULL);};
 
 {STRING}     { TUSE_SIMPLE(NULL); }

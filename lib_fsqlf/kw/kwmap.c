@@ -1,5 +1,7 @@
 #include <lib_fsqlf.h>
+#include <string.h>
 
+static int is_join (char *kw_name);
 
 // Functions that operate on kw-map as a whole.
 // (as opposed to manipulating single element of the map)
@@ -25,6 +27,11 @@ void fsqlf_kwmap_set_spelling(fsqlf_kwmap_t kwmap, enum fsqlf_kwspelling kw_text
 
 
 // Init all keyword settings to defaults.
+// If XMACRO call with argument TEXT equals NULL, then it is comments.
+//    We will apply kw discipline 'kw_comments' without capitalize TEXT.
+//
+// If XMACRO call with argument #NAME matches with 'kw_xxx_join',
+//   then we will not rewrite them and just apply upper case only.
 void fsqlf_kwmap_init(fsqlf_kwmap_t *kwmap)
 {
     *kwmap = NULL;
@@ -39,8 +46,13 @@ void fsqlf_kwmap_init(fsqlf_kwmap_t *kwmap)
         fsqlf_kw_get(*kwmap, #NAME)->after.new_line     = nla; \
         fsqlf_kw_get(*kwmap, #NAME)->after.indent       = ta; \
         fsqlf_kw_get(*kwmap, #NAME)->after.space        = sa; \
-        fsqlf_kw_get(*kwmap, #NAME)->print_original_text = FSQLF_KWSPELLING_USE_HARDCODED_DEFAULT; \
-        fsqlf_kw_get(*kwmap, #NAME)->print_case         = FSQLF_KWCASE_UPPER; \
+        if (TEXT && !is_join (#NAME)) { \
+                fsqlf_kw_get(*kwmap, #NAME)->print_original_text = FSQLF_KWSPELLING_USE_HARDCODED_DEFAULT  ; \
+        } \
+        else { \
+            fsqlf_kw_get(*kwmap, #NAME)->print_original_text = FSQLF_KWSPELLING_USE_ORIGINAL  ; \
+        } \
+        fsqlf_kw_get(*kwmap, #NAME)->print_case         = TEXT ? FSQLF_KWCASE_UPPER : FSQLF_KWCASE_ORIGINAL; \
         fsqlf_kw_get(*kwmap, #NAME)->text               = TEXT; \
         fsqlf_kw_get(*kwmap, #NAME)->is_word            = 1;  \
     } while (0);
@@ -48,6 +60,12 @@ void fsqlf_kwmap_init(fsqlf_kwmap_t *kwmap)
     #undef XMACRO
 }
 
+static int is_join (char *name)
+{
+    char *ptr = strstr (name, "_join");
+
+    return ptr ? 1 : 0;
+}
 
 void fsqlf_kwmap_destroy(fsqlf_kwmap_t kwmap)
 {
