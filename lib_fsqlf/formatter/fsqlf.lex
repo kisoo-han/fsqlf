@@ -231,11 +231,6 @@ END (?i:end)
 {COMP_GT}    { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_comp_gt")); };
 {NOT}    { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_not")); };
 {EXISTS} { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_exists")); };
-{OP_PLUS}    { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_op_plus")); };
-{OP_MINUS}   { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_op_minus")); };
-{OP_MULT}    { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_op_mult")); };
-{OP_DIV}     { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_op_div")); };
-{OP_CONCAT}  { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_op_concat")); };
 
                 /* SELECT ... FROM */
 <INITIAL,stINSERT>{SELECT}  { TUSE_W_STATES(fsqlf_kw_get(yyextra->kwall, "kw_select")); };
@@ -359,6 +354,11 @@ END (?i:end)
 {DBOBJECT}   { TUSE_SIMPLE(NULL); }
 {NUMBER}     { TUSE_SIMPLE(NULL); }
 {SEMICOLON}  { TUSE_W_STATES(fsqlf_kw_get(yyextra->kwall, "kw_semicolon")); }
+{OP_PLUS}    { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_op_plus")); };
+{OP_MINUS}   { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_op_minus")); };
+{OP_MULT}    { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_op_mult")); };
+{OP_DIV}     { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_op_div")); };
+{OP_CONCAT}  { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_op_concat")); };
 <*>.         { TUSE_SIMPLE(NULL); }
 
 
