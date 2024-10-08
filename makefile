@@ -6,15 +6,20 @@ CFLAGS+=-pedantic-errors
 CFLAGS+=-g
 CFLAGS+=-Iinclude
 
-ifeq ($(OS),WIN)
+OS := $(shell uname -s)
+
+ifdef ComSpec
+	OS := Windows
+endif
+
+ifeq ($(OS), Windows)
 	BLD=builds/windows
 	OS_TARGET=windows
 	EXEC_CLI=$(BLD)/fsqlf.exe
 	CFLAGS+=-DBUILDING_LIBFSQLF
-	CC=i686-w64-mingw32-gcc
-	LIBNAME=$(BLD)/libfsqlf.dll
-	LIBNAME2=$(BLD)/libfsqlf.lib
-	LIBFLAGS=-shared -Wl,--out-implib,$(LIBNAME2)
+	CC=gcc
+	LDFLAGS=-static
+	FLEX=win_flex
 else
 	BLD=builds/linux
 	OS_TARGET=linux
@@ -22,6 +27,7 @@ else
 	EXEC_CLI=$(BLD)/fsqlf
 	CC=gcc
 	CFLAGS+=-m32
+	FLEX=flex
 endif
 
 
@@ -57,17 +63,13 @@ $(BLD)/lex.yy.o: $(BLD)/lex.yy.c
 	$(CC) -o $@ -c $< $(CFLAGS) -Ilib_fsqlf/formatter
 
 $(filter lib_fsqlf/%,$(LCOBJ)): $(BLDP)%.o: ./%.c include/lib_fsqlf.h
-
-$(LIBNAME): $(LCOBJ) $(BLD)/lex.yy.o
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBFLAGS)
+	
+$(BLD)/lex.yy.c: lib_fsqlf/formatter/fsqlf.lex lib_fsqlf/formatter/print_keywords.h
+	$(FLEX) -o $(BLD)/lex.yy.c --header-file=$(BLD)/lex.yy.h $<
 
 $(BLD)/lib_fsqlf/conf_file/conf_file_read.o: utils/string/read_int.h
 $(BLD)/lib_fsqlf/formatter/lex_wrapper.o: $(BLD)/lex.yy.h
 $(BLD)/lex.yy.h: $(BLD)/lex.yy.c
-$(BLD)/lex.yy.c: lib_fsqlf/formatter/fsqlf.lex lib_fsqlf/formatter/print_keywords.h
-	# flex options (e.g. `-o`) has to be before input file
-	flex -o $@ --header-file=$(BLD)/lex.yy.h $<
-
 
 #
 # BUILD CLI
@@ -79,11 +81,9 @@ BLDDIRS += $(dir $(COBJ))
 $(COBJ): $(BLD)/%.o: ./%.c include/lib_fsqlf.h | $(BLDDIRS)
 	$(CC) -o $@ -c $< $(CFLAGS)   
 
-INTUTIL = $(BLD)/utils/string/read_int.o
-
-ifeq ($(OS),WIN)
-$(EXEC_CLI): $(COBJ) $(INTUTIL) $(LIBNAME)
-	$(CC) -o $@ $(CFLAGS) $(COBJ) $(INTUTIL) -L$(BLD) -lfsqlf -Wl,-rpath,.
+ifeq ($(OS), Windows)
+$(EXEC_CLI): $(COBJ) $(LCOBJ) $(BLD)/lex.yy.o
+	$(CC) -o $@ $(CFLAGS) $(COBJ) $(LCOBJ) $(BLD)/lex.yy.o $(LDFLAGS)
 else
 $(EXEC_CLI): $(COBJ) $(LCOBJ) $(BLD)/lex.yy.o
 	$(CC) -o $@ $(CFLAGS) $^
