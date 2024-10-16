@@ -195,7 +195,7 @@ END (?i:end)
 %%
 
 {DELETEFROM}  { TUSE_W_STATES(fsqlf_kw_get(yyextra->kwall, "kw_deletefrom")); }
-{DELETE}      { TUSE_W_STATES(fsqlf_kw_get(yyextra->kwall, "kw_deletefrom")); }
+{DELETE}      { TUSE_W_STATES(fsqlf_kw_get(yyextra->kwall, "kw_delete")); }
 {UPDATE}      { TUSE_W_STATES(fsqlf_kw_get(yyextra->kwall, "kw_update")); }
 {SET} { TUSE_W_STATES(fsqlf_kw_get(yyextra->kwall, "kw_set")); }
 <stSET>{COMMA} { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_comma_set")); }
@@ -236,7 +236,6 @@ END (?i:end)
 <INITIAL,stINSERT>{SELECT}  { TUSE_W_STATES(fsqlf_kw_get(yyextra->kwall, "kw_select")); };
 <stSELECT,stCOMMA>{COMMA}   { TUSE_W_STATES(fsqlf_kw_get(yyextra->kwall, "kw_comma")); };
 
-<stSELECT,stCOMMA>{LEFTP}   { PUSH_STATE(stLEFTP); TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_left_p")); yyextra->left_p++; };
 <stLEFTP>{LEFTP}            { PUSH_STATE(stLEFTP); TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_left_p")); yyextra->left_p++; };
 <stLEFTP>{COMMA}            { TUSE_SIMPLE(NULL); };
 <stLEFTP>{ORDERBY}          { TUSE_SIMPLE(NULL); };

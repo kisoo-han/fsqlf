@@ -26,7 +26,6 @@ else
 	PREFIX=/usr/local
 	EXEC_CLI=$(BLD)/fsqlf
 	CC=gcc
-	CFLAGS+=-m32
 	FLEX=flex
 endif
 
