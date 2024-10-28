@@ -282,7 +282,11 @@ END (?i:end)
         PUSH_STATE(stP_SUB);  
     };
 {LEFTP} { PUSH_STATE(stP_SUB); };
-<stP_SUB>{CASE} { TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_case"));};
+<stP_SUB>{CASE} {
+	BEGIN_STATE(*(int*)FSQLF_stack_peek(&yyextra->lexstate_stack));
+	FSQLF_tokque_putthrough(&yyextra->tqueue, yyout, &yyextra->bout, &yyextra->currindent, "(", 1, fsqlf_kw_get(yyextra->kwall, "kw_left_p_sub"), YY_START);
+	TUSE_SIMPLE(fsqlf_kw_get(yyextra->kwall, "kw_case"));
+    };
 <stP_SUB>{SELECT} {
         BEGIN_STATE(stSELECT);
         FSQLF_tokque_putthrough(&yyextra->tqueue, yyout, &yyextra->bout, &yyextra->currindent, "(", 1, fsqlf_kw_get(yyextra->kwall, "kw_left_p_sub"), YY_START);
